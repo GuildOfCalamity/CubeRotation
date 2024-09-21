@@ -11,7 +11,10 @@
         x:Name="hostGrid"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
+
+        <!--  For experimenting with the UpdateScreenshot() method.  -->
         <Image x:Name="imgBackground" />
+
         <TextBox
             x:Name="tbCube"
             AcceptsReturn="True"
@@ -21,6 +24,6 @@
             FontSize="12"
             Foreground="White"
             IsTabStop="False"
-            Opacity="0.6" />
+            Opacity="1" />
     </Grid>
 </Page>
