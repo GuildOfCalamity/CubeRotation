@@ -12,4 +12,4 @@
 
 - A cube rotation demonstration using text characters.
 
-![Icon](Assets/Screenshot.png)
+![Example](Assets/Animation.gif)

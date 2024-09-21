@@ -7,14 +7,20 @@
     xmlns:local="using:WinUI_Cube"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid
+        x:Name="hostGrid"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
+        <Image x:Name="imgBackground" />
         <TextBox
             x:Name="tbCube"
             AcceptsReturn="True"
             AllowFocusOnInteraction="False"
+            Background="Black"
             FontFamily="Consolas"
             FontSize="12"
             Foreground="White"
-            IsTabStop="False" />
+            IsTabStop="False"
+            Opacity="0.6" />
     </Grid>
 </Page>
