@@ -24,7 +24,7 @@ namespace WinUI_Cube;
 
 public partial class App : Application
 {
-    private Window? m_window;
+    public static Window? m_window;
     public static int m_width { get; set; } = 850;
     public static int m_height { get; set; } = 750;
     public static bool IsClosing { get; set; } = false;

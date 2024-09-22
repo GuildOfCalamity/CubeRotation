@@ -20,7 +20,7 @@ public sealed partial class MainPage : Page
     DispatcherTimer? _timer;
     static float x, y, z, ooz, xp, yp;
     static int idx;
-    static float iterationSpeed = 0.9f;
+    static float iterationSpeed = 0.8f;
     static float cubeWidth = 32;
     static int widthOffset = 127;
     static int heightOffset = 45;
@@ -99,14 +99,14 @@ public sealed partial class MainPage : Page
         //if (C >= 360) { C = 0; }
 
 
-        DispatcherQueue.TryEnqueue(async () =>
+        DispatcherQueue.TryEnqueue(() =>
         {
             // Render the buffer to the TextBox.
             tbCube.Text = $"{sb}";
 
             #region [Extras]
-            //if (++frameCount % 10 == 0)
-            //    this.Title = $"{1000 / vsw.GetElapsedTime().Milliseconds} FPS";
+            if (++frameCount % 10 == 0)
+                App.m_window.Title = $"{1000 / vsw.GetElapsedTime().Milliseconds} FPS";
 
             //if (++frameCount % 10 == 0)
             //{
@@ -174,7 +174,7 @@ public sealed partial class MainPage : Page
     ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SurfaceImageSource"/>
     ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SvgImageSource"/>
     /// </remarks>
-    public static async Task SaveImageSourceToFileAsync(Microsoft.UI.Xaml.Controls.Grid hostGrid, Microsoft.UI.Xaml.Media.ImageSource imageSource, string filePath, int width = 32, int height = 32)
+    async Task SaveImageSourceToFileAsync(Microsoft.UI.Xaml.Controls.Grid hostGrid, Microsoft.UI.Xaml.Media.ImageSource imageSource, string filePath, int width = 32, int height = 32)
     {
         // Create an Image control to hold the ImageSource
         Microsoft.UI.Xaml.Controls.Image imageControl = new Microsoft.UI.Xaml.Controls.Image
@@ -298,7 +298,7 @@ public sealed partial class MainPage : Page
     /// 1 Linear.........: A bilinear interpolation algorithm. The output pixel values are computed as a weighted average of the nearest four pixels in a 2x2 grid.
     /// 0 NearestNeighbor: A nearest neighbor interpolation algorithm. Also known as nearest pixel or point interpolation. The output pixel is assigned the value of the pixel that the point falls within. No other pixels are considered.
     /// </remarks>
-    public static async Task SaveSoftwareBitmapToFileAsync(Windows.Graphics.Imaging.SoftwareBitmap softwareBitmap, string filePath, Windows.Graphics.Imaging.BitmapInterpolationMode interpolation = Windows.Graphics.Imaging.BitmapInterpolationMode.Fant)
+    async Task SaveSoftwareBitmapToFileAsync(Windows.Graphics.Imaging.SoftwareBitmap softwareBitmap, string filePath, Windows.Graphics.Imaging.BitmapInterpolationMode interpolation = Windows.Graphics.Imaging.BitmapInterpolationMode.Fant)
     {
         if (File.Exists(filePath))
         {
