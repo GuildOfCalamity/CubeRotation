@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,13 +18,14 @@ public sealed partial class MainPage : Page
 {
     #region [Props]
     int _counter = 0;
+    bool _useBlocks = false;
     DispatcherTimer? _timer;
     static float x, y, z, ooz, xp, yp;
     static int idx;
     static float iterationSpeed = 0.8f;
-    static float cubeWidth = 32;
-    static int widthOffset = 127;
-    static int heightOffset = 45;
+    static float cubeWidth = 30;
+    static int widthOffset = 90;
+    static int heightOffset = 36;
     static float[] zBuffer = new float[widthOffset * heightOffset];
     static int[] buffer = new int[widthOffset * heightOffset];
     static int backgroundChar = ' ';
@@ -31,7 +33,7 @@ public sealed partial class MainPage : Page
     static float B = 0.001f;
     static float C = 0.001f;
     static int distanceFromCam = 100;
-    static float K1 = 30;
+    static float K1 = 28;
     static long frameCount = 0;
     static ValueStopwatch vsw = ValueStopwatch.StartNew();
     #endregion
@@ -51,6 +53,21 @@ public sealed partial class MainPage : Page
             _timer.Tick += _timer_Tick;
             _timer.Start();
         }
+        //svZoom.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+    }
+
+    void ZoomValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        // We'll zoom by 1/10th with each tick.
+        svZoom.ChangeView(null, null, (float)(e.NewValue/10d) + 1f);
+        
+        // Once the scrollbars are triggered, keep the content in the center.
+        if (svZoom.ScrollableHeight != double.NaN && svZoom.ScrollableHeight > 0)
+            svZoom.ScrollToVerticalOffset(svZoom.ScrollableHeight / 2);
+        if (svZoom.ScrollableWidth != double.NaN && svZoom.ScrollableWidth > 0)
+            svZoom.ScrollToHorizontalOffset(svZoom.ScrollableWidth / 2);
+
+        //svZoom.RasterizationScale = 1.0 - (e.NewValue / 10);
     }
 
     void _timer_Tick(object? sender, object e)
@@ -65,18 +82,24 @@ public sealed partial class MainPage : Page
         {
             for (float cubeY = -cubeWidth; cubeY < cubeWidth; cubeY += iterationSpeed)
             {
-                // 1st face
-                calculateForSurface(cubeX, cubeY, -cubeWidth, '≈');
-                // 2nd face
-                calculateForSurface(cubeWidth, cubeY, cubeX, '⁞');
-                // 3rd face
-                calculateForSurface(-cubeWidth, cubeY, -cubeX, '|');
-                // 4th face
-                calculateForSurface(-cubeX, cubeY, cubeWidth, '⅓');
-                // 5th face
-                calculateForSurface(cubeX, -cubeWidth, -cubeY, '⁃');
-                // 6th face
-                calculateForSurface(cubeX, cubeWidth, cubeY, '•');
+                if (_useBlocks)
+                {
+                    calculateForSurface(cubeX, cubeY, -cubeWidth, '░');  // 1st face
+                    calculateForSurface(cubeWidth, cubeY, cubeX, '▒');   // 2nd face
+                    calculateForSurface(-cubeWidth, cubeY, -cubeX, '▓'); // 3rd face
+                    calculateForSurface(-cubeX, cubeY, cubeWidth, '▓');  // 4th face
+                    calculateForSurface(cubeX, -cubeWidth, -cubeY, '▒'); // 5th face
+                    calculateForSurface(cubeX, cubeWidth, cubeY, '░');   // 6th face
+                }
+                else
+                {
+                    calculateForSurface(cubeX, cubeY, -cubeWidth, '…');  // 1st face
+                    calculateForSurface(cubeWidth, cubeY, cubeX, '⁞');   // 2nd face
+                    calculateForSurface(-cubeWidth, cubeY, -cubeX, '|'); // 3rd face
+                    calculateForSurface(-cubeX, cubeY, cubeWidth, '≈');  // 4th face
+                    calculateForSurface(cubeX, -cubeWidth, -cubeY, '⁃'); // 5th face
+                    calculateForSurface(cubeX, cubeWidth, cubeY, '•');   // 6th face
+                }
             }
         }
 
@@ -99,8 +122,11 @@ public sealed partial class MainPage : Page
         //if (C >= 360) { C = 0; }
 
 
-        DispatcherQueue.TryEnqueue(() =>
+        if (!App.IsClosing)
         {
+            //DispatcherQueue.TryEnqueue(() =>
+            //{
+
             // Render the buffer to the TextBox.
             tbCube.Text = $"{sb}";
 
@@ -108,13 +134,14 @@ public sealed partial class MainPage : Page
             if (++frameCount % 10 == 0)
                 App.m_window.Title = $"{1000 / vsw.GetElapsedTime().Milliseconds} FPS";
 
-            //if (++frameCount % 10 == 0)
+            //if (++frameCount % 5 == 0)
             //{
             //    //await UpdateScreenshot(hostGrid, imgBackground);
             //    await UpdateScreenshot(hostGrid, null);
             //}
             #endregion
-        });
+            //});
+        }
     }
 
     #region [Math Functions]
@@ -129,6 +156,7 @@ public sealed partial class MainPage : Page
                j * MathF.Sin(A) * MathF.Sin(B) * MathF.Sin(C) + k * MathF.Cos(A) * MathF.Sin(B) * MathF.Sin(C) -
                i * MathF.Cos(B) * MathF.Sin(C);
     }
+
     static float calculateZ(int i, int j, int k)
     {
         return k * MathF.Cos(A) * MathF.Cos(B) - j * MathF.Sin(A) * MathF.Cos(B) + i * MathF.Sin(B);
@@ -154,81 +182,7 @@ public sealed partial class MainPage : Page
     }
     #endregion
 
-    #region [Screenshot]
-    /// <summary>
-    /// This was not trivial and proved to be a challenge.
-    /// The main issue is the UriSource. Because we're extracting the asset from a DLL, the UriSource is null which immediately limits our options.
-    /// I'm sure someone will correct my misadventure, but this works — and you can't argue with results.
-    /// </summary>
-    /// <param name="hostGrid"><see cref="Microsoft.UI.Xaml.Controls.Grid"/> to serve as the liaison.</param>
-    /// <param name="imageSource"><see cref="Microsoft.UI.Xaml.Media.ImageSource"/> to save.</param>
-    /// <param name="filePath">The full path to write the image.</param>
-    /// <param name="width">16 to 256</param>
-    /// <param name="height">16 to 256</param>
-    /// <remarks>
-    /// If the width or height is not correct the render target cannot be saved.
-    /// The following types derive from <see cref="Microsoft.UI.Xaml.Media.ImageSource"/>:
-    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.BitmapSource"/>
-    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap"/>
-    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource"/>
-    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SurfaceImageSource"/>
-    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SvgImageSource"/>
-    /// </remarks>
-    async Task SaveImageSourceToFileAsync(Microsoft.UI.Xaml.Controls.Grid hostGrid, Microsoft.UI.Xaml.Media.ImageSource imageSource, string filePath, int width = 32, int height = 32)
-    {
-        // Create an Image control to hold the ImageSource
-        Microsoft.UI.Xaml.Controls.Image imageControl = new Microsoft.UI.Xaml.Controls.Image
-        {
-            Source = imageSource,
-            Width = width,
-            Height = height,
-        };
-
-        // NOTE: This is super clunky, but for some reason the Image resource is
-        // never fully created if it's not appended to a rendered host control.
-        // As a workaround we'll add the Image control to the host Grid. ┐( ˘_˘ )┌
-        hostGrid.Children.Add(imageControl);
-
-        // Wait for the image to be loaded and rendered
-        await Task.Delay(50);
-
-        // Render the Image control to a RenderTargetBitmap
-        Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap renderTargetBitmap = new();
-        await renderTargetBitmap.RenderAsync(imageControl);
-
-        // Convert RenderTargetBitmap to SoftwareBitmap
-        IBuffer pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
-        byte[] pixels = pixelBuffer.ToArray();
-
-        // Remove the Image control from the host Grid
-        hostGrid.Children.Remove(imageControl);
-
-        try
-        {
-            if (pixels.Length == 0 || renderTargetBitmap.PixelWidth == 0 || renderTargetBitmap.PixelHeight == 0)
-            {
-                Debug.WriteLine($"[ERROR] The width and height are not a match for this asset. Try a different value other than {width},{height}.");
-            }
-            else
-            {
-                // NOTE: A SoftwareBitmap displayed in a XAML app must be in BGRA pixel format with pre-multiplied alpha values.
-                Windows.Graphics.Imaging.SoftwareBitmap softwareBitmap = new Windows.Graphics.Imaging.SoftwareBitmap(
-                    Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
-                    renderTargetBitmap.PixelWidth,
-                    renderTargetBitmap.PixelHeight,
-                    Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
-                softwareBitmap.CopyFromBuffer(pixelBuffer);
-                // Save SoftwareBitmap to file
-                await SaveSoftwareBitmapToFileAsync(softwareBitmap, filePath, Windows.Graphics.Imaging.BitmapInterpolationMode.NearestNeighbor);
-                softwareBitmap.Dispose();
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[ERROR] SaveImageSourceToFileAsync: {ex.Message}");
-        }
-    }
-
+    #region [ScreenShot]
     /// <summary>
     /// Apply a page's visual state to an <see cref="Microsoft.UI.Xaml.Controls.Image"/> source. 
     /// If the target is null then the image is saved to disk.
@@ -259,12 +213,14 @@ public sealed partial class MainPage : Page
     {
         Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap renderTargetBitmap = new();
         await renderTargetBitmap.RenderAsync(root, App.m_width, App.m_height);
+        
+        // If you want the image to be applied to the UIElement, pass in a target control of type Image.
         if (target is not null)
         {
             // A render target bitmap is a viable ImageSource.
-            imgBackground.Source = renderTargetBitmap;
+            target.Source = renderTargetBitmap;
         }
-        else
+        else // save to disk
         {
             // Convert RenderTargetBitmap to SoftwareBitmap
             IBuffer pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
@@ -340,6 +296,80 @@ public sealed partial class MainPage : Page
                     Debug.WriteLine($"[ERROR] SaveSoftwareBitmapToFileAsync({ex.HResult}): {ex.Message}");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// This was not trivial and proved to be a challenge.
+    /// The main issue is the UriSource. Because we're extracting the asset from a DLL, the UriSource is null which immediately limits our options.
+    /// I'm sure someone will correct my misadventure, but this works — and you can't argue with results.
+    /// </summary>
+    /// <param name="hostGrid"><see cref="Microsoft.UI.Xaml.Controls.Grid"/> to serve as the liaison.</param>
+    /// <param name="imageSource"><see cref="Microsoft.UI.Xaml.Media.ImageSource"/> to save.</param>
+    /// <param name="filePath">The full path to write the image.</param>
+    /// <param name="width">16 to 256</param>
+    /// <param name="height">16 to 256</param>
+    /// <remarks>
+    /// If the width or height is not correct the render target cannot be saved.
+    /// The following types derive from <see cref="Microsoft.UI.Xaml.Media.ImageSource"/>:
+    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.BitmapSource"/>
+    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap"/>
+    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SoftwareBitmapSource"/>
+    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SurfaceImageSource"/>
+    ///  - <see cref="Microsoft.UI.Xaml.Media.Imaging.SvgImageSource"/>
+    /// </remarks>
+    async Task SaveImageSourceToFileAsync(Microsoft.UI.Xaml.Controls.Grid hostGrid, Microsoft.UI.Xaml.Media.ImageSource imageSource, string filePath, int width = 32, int height = 32)
+    {
+        // Create an Image control to hold the ImageSource
+        Microsoft.UI.Xaml.Controls.Image imageControl = new Microsoft.UI.Xaml.Controls.Image
+        {
+            Source = imageSource,
+            Width = width,
+            Height = height,
+        };
+
+        // NOTE: This is super clunky, but for some reason the Image resource is
+        // never fully created if it's not appended to a rendered host control.
+        // As a workaround we'll add the Image control to the host Grid. ┐( ˘_˘ )┌
+        hostGrid.Children.Add(imageControl);
+
+        // Wait for the image to be loaded and rendered
+        await Task.Delay(50);
+
+        // Render the Image control to a RenderTargetBitmap
+        Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap renderTargetBitmap = new();
+        await renderTargetBitmap.RenderAsync(imageControl);
+
+        // Convert RenderTargetBitmap to SoftwareBitmap
+        IBuffer pixelBuffer = await renderTargetBitmap.GetPixelsAsync();
+        byte[] pixels = pixelBuffer.ToArray();
+
+        // Remove the Image control from the host Grid
+        hostGrid.Children.Remove(imageControl);
+
+        try
+        {
+            if (pixels.Length == 0 || renderTargetBitmap.PixelWidth == 0 || renderTargetBitmap.PixelHeight == 0)
+            {
+                Debug.WriteLine($"[ERROR] The width and height are not a match for this asset. Try a different value other than {width},{height}.");
+            }
+            else
+            {
+                // NOTE: A SoftwareBitmap displayed in a XAML app must be in BGRA pixel format with pre-multiplied alpha values.
+                Windows.Graphics.Imaging.SoftwareBitmap softwareBitmap = new Windows.Graphics.Imaging.SoftwareBitmap(
+                    Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+                    renderTargetBitmap.PixelWidth,
+                    renderTargetBitmap.PixelHeight,
+                    Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied);
+                softwareBitmap.CopyFromBuffer(pixelBuffer);
+                // Save SoftwareBitmap to file
+                await SaveSoftwareBitmapToFileAsync(softwareBitmap, filePath, Windows.Graphics.Imaging.BitmapInterpolationMode.NearestNeighbor);
+                softwareBitmap.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ERROR] SaveImageSourceToFileAsync: {ex.Message}");
         }
     }
     #endregion

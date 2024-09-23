@@ -11,19 +11,58 @@
         x:Name="hostGrid"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <!--  For experimenting with the UpdateScreenshot() method.  -->
-        <Image x:Name="imgBackground" />
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                Margin="10,4,2,8"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                FontSize="13"
+                Text="Zoom Factor:" />
+            <Slider
+                Grid.Column="1"
+                Width="180"
+                Margin="10,4"
+                HorizontalAlignment="Left"
+                Maximum="{x:Bind svZoom.MaxZoomFactor, Mode=OneWay}"
+                Minimum="{x:Bind svZoom.MinZoomFactor, Mode=OneWay}"
+                ValueChanged="ZoomValueChanged" />
+        </Grid>
 
-        <TextBox
-            x:Name="tbCube"
-            AcceptsReturn="True"
-            AllowFocusOnInteraction="False"
-            Background="Black"
-            FontFamily="Consolas"
-            FontSize="12"
-            Foreground="White"
-            IsTabStop="False"
-            Opacity="1" />
+        <ScrollViewer
+            x:Name="svZoom"
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Hidden"
+            MaxZoomFactor="80"
+            MinZoomFactor="1"
+            VerticalScrollBarVisibility="Hidden"
+            ZoomMode="Enabled">
+
+            <!--  For experimenting with the UpdateScreenshot() method.  -->
+            <!--<Image x:Name="imgBackground" />-->
+
+            <TextBox
+                x:Name="tbCube"
+                AcceptsReturn="True"
+                AllowFocusOnInteraction="False"
+                Background="Transparent"
+                FontFamily="Consolas"
+                FontSize="4"
+                Foreground="White"
+                Opacity="1"
+                Style="{StaticResource PlainTextBox}" />
+
+        </ScrollViewer>
+
     </Grid>
+
 </Page>
